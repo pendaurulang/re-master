@@ -1,0 +1,36 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+cd $SCRIPT_BINDDIR
+. bin/rootfs-library.sh
+
+# Only need a new initramfs if using encrypted rootfs
+exit_if_not_configured CONFIG_ENCRYPT_ROOTFS
+exit_if_stamped $0
+
+refresh_or_install_file \
+    /etc/initramfs-tools/initramfs.conf \
+    "Installing custom initrd configuration..."
+
+
+if [ "${CONFIG_UBUNTU_RELEASE_TRUSTY-x}" = "y" ] ; then
+    SRCFILE=casper-14.04.4
+elif [ "${CONFIG_UBUNTU_RELEASE_WILY-x}" = "y" ] ; then
+    SRCFILE-casper-15.10
+fi
+
+refresh_or_install_file_as \
+    $SRCFILE \
+    /usr/share/initramfs-tools/scripts/casper \
+    "Installing custom casper boot script..."
+
+# Create new initramfs that includes cryptsetup
+printinfo Creating new initramfs with crypto hooks...
+export CRYPTSETUP=y
+update-initramfs -k all -u || die "Unable to execute update-initramfs!"
+
+updated_rootfs
+make_stamp $0
+
+exit 0

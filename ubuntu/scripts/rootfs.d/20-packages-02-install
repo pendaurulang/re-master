@@ -1,0 +1,27 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+cd $SCRIPT_BINDDIR
+. bin/rootfs-library.sh
+
+# Exit if nothing to do
+exit_if_not_configured CONFIG_INSTALL_PACKAGES
+exit_if_stamped $0
+[ -n "$(ls config/install-pkgs.d)" ] || exit 0
+
+prevent_services_running
+export DEBIAN_FRONTEND=noninteractive
+
+# Install packages listed in config/install-pkgs.d
+printinfo Installing configured additional packages...
+for pkglist in config/install-pkgs.d/*; do
+    pkgs=`cat $pkglist`
+    apt-get install -y $pkgs || die Package installation failure!
+done
+
+allow_services_to_run
+updated_rootfs
+make_stamp $0
+
+exit 0

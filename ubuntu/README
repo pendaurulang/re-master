@@ -1,0 +1,22 @@
+Ubuntu Remaster is a set of automated scripts for taking a stock ISO
+distribution image from Canonical and recreating it with changes and
+additional content.  It is broken up into layered branches to allow
+you to make your own optionally encrypted ISO images.  Customizers can
+branch off various 'layers' to add their custom content to an existing
+image.
+
+
+Using the Ubuntu Remaster build scripts
+
+To create a remastered Ubuntu ISO file, with no further customization
+beyond what is done in these scripts, simply do the following:
+
+$ git clone -b <desired branch> git://github.com/jmcorgan/ubuntu-remaster.git
+$ cd ubuntu-remaster
+$ make deps
+$ make config
+$ make
+
+This will require 'sudo' access. Everything is completely automated,
+except for passphrase entry when making an encrypted image (see
+below), and possible password prompts for 'sudo' operation.

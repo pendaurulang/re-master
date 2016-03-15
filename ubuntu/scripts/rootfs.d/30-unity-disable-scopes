@@ -1,0 +1,29 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+cd $SCRIPT_BINDDIR
+. bin/rootfs-library.sh
+
+exit 0
+
+# This won't work because it affects /root/.config/dconf/user
+# Need to figure out how to force it to use /etc/skel/.config/dconf/user
+printinfo "Disabling Unity remote scopes..."
+dbus-launch --exit-with-session gsettings set com.canonical.Unity.Lenses remote-content-search none &&
+dbus-launch --exit-with-session gsettings set com.canonical.Unity.Lenses disabled-scopes \
+      "['more_suggestions-amazon.scope', 'more_suggestions-u1ms.scope',
+      'more_suggestions-populartracks.scope', 'music-musicstore.scope',
+      'more_suggestions-ebay.scope', 'more_suggestions-ubuntushop.scope',
+      'more_suggestions-skimlinks.scope']" || die "Unable to disable remote scopes!"
+
+# This won't work because /etc/hosts gets regenerated somewhere, maybe
+# dnsmasq does it
+if ! grep -q productsearch.ubuntu.com /etc/hosts; then
+    printinfo "Disabling Unity Dash keystroke spying..."
+    echo "127.0.0.1 productsearch.ubuntu.com" >> /etc/hosts
+fi;
+
+updated_rootfs
+
+exit 0

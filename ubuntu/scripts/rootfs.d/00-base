@@ -1,0 +1,10 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+cd $SCRIPT_BINDDIR
+. bin/rootfs-library.sh
+
+# DO SOMETHING HERE
+
+exit 0

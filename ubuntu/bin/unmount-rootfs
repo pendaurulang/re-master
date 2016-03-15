@@ -1,0 +1,21 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+. bin/library.sh
+
+# Unmount root filesystem read-write overlay mount if needed
+test_rootfs_rw_mounted && {
+    # Unmount overlay
+    printinfo Unmounting squashfs root filesystem read-write overlay...
+    $SUDO $UMOUNT -l $ROOTFSMNT_RW || die Failed to unmount root filesystem overlay!
+}
+
+# Unmount root filesystem read-only mount if needed
+test_rootfs_ro_mounted && {
+    # Unmount image
+    printinfo Unmounting squashfs root filesystem...
+    $SUDO $UMOUNT -l $ROOTFSMNT_RO || die Failed to unmount root filesystem image!
+}
+
+exit 0

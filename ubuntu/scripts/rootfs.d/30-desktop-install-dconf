@@ -1,0 +1,20 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+cd $SCRIPT_BINDDIR
+. bin/rootfs-library.sh
+
+if [ "${CONFIG_UBUNTU_RELEASE_TRUSTY-x}" = "y" ] ; then
+    SRCFILE=user-trusty
+elif [ "${CONFIG_UBUNTU_RELEASE_WILY-x}" = "y" ] ; then
+    SRCFILE=user-wily
+fi
+
+refresh_or_install_file_as \
+    $SRCFILE \
+    /etc/skel/.config/dconf/user \
+    "Installing live user dconf configuration" \
+    999 999 644
+
+exit 0

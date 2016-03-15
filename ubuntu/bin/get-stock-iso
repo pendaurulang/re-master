@@ -1,0 +1,66 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+. bin/library.sh
+
+# Bail if stock ISO file already exists
+[ ! -f $UBUNTU_ISO_FILE ] || die Stock ubuntu ISO file already exists!
+
+# Download stock image
+printinfo Downloading stock Ubuntu ISO image if needed...
+ISOTMP=$UBUNTU_ISO_FILE.tmp
+[ -f $ISOTMP ] || {
+    printinfo Not found, downloading $UBUNTU_ISO_URL
+
+    MAXTRIES=10
+    for i in $(seq 1 $MAXTRIES) ; do
+        $CURL -L -C - $UBUNTU_ISO_URL -o $ISOTMP
+        RET=$?
+        [ $RET -eq 0 ] && break
+        [ $RET -eq 33 ] && printinfo Ignoring... && break    # workaround curl bug
+        [ $i -eq $MAXTRIES ] && die Unable to download stock ISO file!
+        [ $RET -eq 56 ] && printwarn Network timeout, retrying... && continue # network timeout
+        exit 1
+    done
+}
+
+# Import Ubuntu gpg public key if needed
+printinfo Checking for Ubuntu gpg public key \($UBUNTU_KEY_ID\)
+$GPG --list-keys $UBUNTU_KEY_ID > /dev/null || {
+    printinfo Not found, retrieving for import.
+    $GPG --keyserver hkp://keyserver.ubuntu.com --recv-keys $UBUNTU_KEY_ID || \
+        die Key import failed!
+    printsuccess Import successful.
+}
+
+# Retrieve SHA256SUMS and verify signature
+printinfo Retrieving SHA256 hashes and signature files
+[ -f $UBUNTU_SHA256SUMS_FILE ] || $CURL -# $UBUNTU_SHA256SUMS_URL -o $UBUNTU_SHA256SUMS_FILE || \
+    die Failed to retrieve SHA256SUMS file from Ubuntu server!
+[ -f $UBUNTU_SHA256SUMS_FILE.gpg ] || $CURL -# $UBUNTU_SHA256SUMS_URL.gpg -o $UBUNTU_SHA256SUMS_FILE.gpg || \
+    die Failed to retrieve SHA256SUMS.gpg file from Ubuntu server!
+$GPG --verify $UBUNTU_SHA256SUMS_FILE.gpg $UBUNTU_SHA256SUMS_FILE || \
+    die SHA256SUMS signature verification failed!
+
+# Extract SHA256SUM from file
+printinfo Calculating checksum of Ubuntu stock ISO image
+CALCULATED=`$SHA256SUM $ISOTMP | cut -f 1 -d ' '`
+EXPECTED=`grep $CONFIG_UBUNTU_ISO_BASE $UBUNTU_SHA256SUMS_FILE | cut -f 1 -d ' '`
+
+if [ -z "$EXPECTED" ]; then
+    die The checksum for $UBUNTU_ISO_FILE was not found in $UBUNTU_SHA256SUMS_FILE !
+fi
+
+printinfo "Calculated: $CALCULATED"
+printinfo "Expected:   $EXPECTED"
+
+if [ $CALCULATED != $EXPECTED ] ; then
+    die Checksum mismatch, failing!
+fi
+
+# Move verified ISO file into place
+mv $ISOTMP $UBUNTU_ISO_FILE || die Unable to move ISO file into place!
+
+printsuccess Sucessfully downloaded Ubuntu stock ISO image.
+exit 0

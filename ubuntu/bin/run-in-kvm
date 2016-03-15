@@ -1,0 +1,22 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+. bin/library.sh
+
+KVM=/usr/bin/kvm
+[ -x $KVM ] || die The kvm virtual machine program is not installed.
+
+CDROM=$ISO_DIR/$REMASTER_NAME
+
+[ -f $CDROM ] || die $CDROM does not exist or is not readable!
+
+$KVM \
+    -name $REMASTER_NAME \
+    -cdrom $ISO_DIR/$REMASTER_NAME \
+    -smp cpus=4 \
+    -m 4096 \
+    -vga std \
+    -boot d
+
+exit 0

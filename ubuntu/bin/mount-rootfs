@@ -1,0 +1,34 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+. bin/library.sh
+
+# Create read-only mount directory if needed
+require_iso_ro_mounted
+mkdir_or_fail $ROOTFSMNT_RO "Unable to create directory for mounting root filesystem!"
+
+# Mount root filesystem
+printinfo Mounting squashfs root filesystem read only...
+$SUDO $MOUNT -t squashfs -oro $ISOMNT_RO/casper/filesystem.squashfs $ROOTFSMNT_RO || \
+    die Mounting of root filesystem failed!
+
+mkdir_or_fail $ROOTFSMNT_RW "Unable to create directory for mounting root filesystem read-write overlay!"
+mkdir_or_fail $ROOTFSMNT_WORK "Unable to create work directory for root filesystem read-write overlay!"
+
+# Mount read-write overlay
+printinfo Mounting squashfs root filesystem read-write overlay...
+
+workdiropt=''
+if test_overlay_workdir_needed ; then
+    workdiropt='-oworkdir='$ROOTFSMNT_WORK
+fi
+
+$SUDO $MOUNT -t overlayfs \
+             -olowerdir=$ROOTFSMNT_RO \
+             -oupperdir=$ROOTFSMNT_RW \
+             $workdiropt \
+             overlayfs $ROOTFSMNT_RW || \
+    die Mounting of Ubuntu root filesystem read-write overlay failed!
+
+exit 0

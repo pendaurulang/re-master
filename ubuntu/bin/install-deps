@@ -1,0 +1,38 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+SUDO=/usr/bin/sudo
+
+echo Installing utility packages for build if needed...
+$SUDO apt-get install \
+     curl \
+     gnupg \
+     coreutils \
+     squashfs-tools \
+     ccache \
+     genisoimage \
+     syslinux || {
+    echo Package installation failed!
+    exit 1
+}
+
+# Conditionally add PPA
+grep -h "^deb.*kconfig-frontends" /etc/apt/sources.list > /dev/null 2>&1
+if [ $? -ne 0 ] ; then
+    echo Adding PPA repository and kconfig-frontends packages if needed...
+    sudo add-apt-repository -y ppa:george-hopkins/kconfig-frontends || {
+        echo Unable to install kconfig-frontends!
+        exit 1
+    }
+
+    $SUDO apt-get update
+fi
+
+echo Installing kconfig-frontends configuration package...
+$SUDO apt-get install kconfig-ncurses || {
+    echo Unable to install kconfig-ncurses!
+    exit 1
+}
+
+exit 0

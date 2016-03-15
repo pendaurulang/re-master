@@ -1,0 +1,19 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+cd $SCRIPT_BINDDIR
+. bin/rootfs-library.sh
+
+# Exit if nothing to do
+exit_if_not_configured CONFIG_USE_CCACHE
+SIZE=`ccache -s | grep 'max cache size' | tr -s ' ' | cut -f 4 -d ' '`
+
+[ "$SIZE" = "20.0" ] || {
+    # Set ccache size to 20G
+    printinfo Configuring ccache for rootfs operation...
+    CCACHE_DIR=/root/.ccache ccache -M 20G || \
+        die "Unable to set cache max cache size!"
+}
+
+exit 0

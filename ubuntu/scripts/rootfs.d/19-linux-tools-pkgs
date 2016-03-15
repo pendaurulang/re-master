@@ -1,0 +1,24 @@
+#!/bin/sh
+set -o nounset
+#set -x #DEBUG
+
+cd $SCRIPT_BINDDIR
+. bin/rootfs-library.sh
+
+# Install linux-tools package names as approprite
+if [ "${CONFIG_UBUNTU_RELEASE_TRUSTY-x}" = "y" ] ; then
+    SRCFILE=custom/linux-tools/linux-tools-trusty
+else if [ "${CONFIG_UBUNTU_RELEASE_WILY-x}" = "y" ] ; then
+    SRCFILE=custom/linux-tools/linux-tools-wily
+     fi
+fi
+
+DSTFILE=config/install-pkgs.d/linux-tools
+
+if [ ! -f $DSTFILE ] || [ $SRCFILE -nt $DSTFILE ] ; then
+    printinfo Installing linux-tools package names for Ubuntu version...
+    install -T -o root -g root -m 644 $SRCFILE $DSTFILE || \
+        die "Unable to install linux-tools package names!"
+fi
+
+exit 0
